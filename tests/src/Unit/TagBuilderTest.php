@@ -4,7 +4,6 @@ namespace Drupal\Tests\pulse_analytics\Unit;
 
 use Drupal\pulse_analytics\TagBuilder;
 use Drupal\Tests\UnitTestCase;
-use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests the tag builder.
@@ -16,7 +15,6 @@ use PHPUnit\Framework\Attributes\Group;
  *
  * @group pulse_analytics
  */
-#[Group('pulse_analytics')]
 class TagBuilderTest extends UnitTestCase {
 
   /**

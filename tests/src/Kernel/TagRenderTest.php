@@ -4,8 +4,6 @@ namespace Drupal\Tests\pulse_analytics\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\pulse_analytics\TagBuilder;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Renders the tag through Drupal and reads the markup back.
@@ -17,10 +15,21 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * decided by Drupal's renderer, not by us, and no amount of array-shape
  * assertion can see it.
  *
+ * ⚠️ Test metadata here is doc-comment only, with no PHPUnit attributes,
+ * and that is a measured decision rather than an oversight.
+ *
+ * Drupal 10.6 pins PHPUnit ^9.6, where the attribute classes do not exist:
+ * phpstan reports that the attribute class does not exist and the drupal.org
+ * CI job for Drupal 10 goes red. Drupal 11.4 pins ^11.5, which merely emits a
+ * deprecation notice for doc-comment metadata. A red build on one supported
+ * core version beats a cosmetic notice on another.
+ *
+ * Revisit when the core floor moves past Drupal 10, which reaches end of life
+ * in December 2026, and switch to attributes then — that is what core 11
+ * already does everywhere.
+ *
  * @group pulse_analytics
  */
-#[Group('pulse_analytics')]
-#[RunTestsInSeparateProcesses]
 class TagRenderTest extends KernelTestBase {
 
   /**

@@ -70,14 +70,31 @@ echo "==> phpunit (unit + kernel)"
 # in a way that cares which. Run from web/core because that is where Drupal's
 # phpunit.xml.dist and its bootstrap live.
 [ -f web/core/phpunit.xml ] || cp web/core/phpunit.xml.dist web/core/phpunit.xml
+# ⚠️ -c must be an ABSOLUTE path. Drupal kernel tests run in a separate PHP
+# process, and the child resolves a relative -c against its own working
+# directory — which produced eight identical
+# `Could not read "phpunit.xml"` errors that looked like module failures.
+PHPUNIT_XML="$PWD/web/core/phpunit.xml"
 ( cd web/core \
   && SIMPLETEST_DB="sqlite://localhost/:memory:" \
-     ../../vendor/bin/phpunit -c phpunit.xml ../modules/custom/pulse_analytics/tests ) || STATUS=1
+     ../../vendor/bin/phpunit -c "$PHPUNIT_XML" ../modules/custom/pulse_analytics/tests ) || STATUS=1
 
 echo
 if [ "$STATUS" -eq 0 ]; then
   echo "ALL CHECKS PASSED"
 else
   echo "CHECKS FAILED"
+  cat <<'NOTE'
+
+⚠️  If phpunit printed "OK (N tests, M assertions)" and still exited non-zero,
+    read the deprecation block before blaming this module. Drupal 10 on
+    PHP 8.5 trips `PDO::sqliteCreateFunction() is deprecated since 8.5` inside
+    core's own SQLite driver, and phpunit.xml sets failOnWarning="true".
+    Drupal 10.6 declares only `php >=8.1.0`; PHP 8.5 postdates it.
+
+    Confirmed by control: a Drupal 10 CORE kernel test emits the identical
+    deprecations on this PHP. Run the Drupal 10 leg on PHP 8.3 to see it green,
+    or just read the "OK (N tests)" line — that is the module's result.
+NOTE
 fi
 exit "$STATUS"

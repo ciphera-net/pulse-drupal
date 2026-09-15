@@ -76,32 +76,54 @@ directory: neither `google_analytics` nor `matomo` carries one.
 reach this project automatically. It runs phpcs (Drupal + DrupalPractice),
 phpstan, lint passes, and PHPUnit across the supported core matrix.
 
-🔑 **The core matrix is why that file matters more than any local run.** Measured
-15-09-2026: **Drupal 10.6 pins PHPUnit `^9.6.34`**, which cannot read attribute
-test metadata; **Drupal 11.4 pins `^11.5.50`**, which deprecates doc-comment
-metadata and where core itself has migrated fully to attributes (472 attribute
-`#[Group]` uses, zero doc-comment `@group`). The tests here therefore carry
-**both** `@group` and `#[Group]`:
+🔑 **The core matrix is why that file matters more than any local run**, and it
+decides how the tests are annotated. Measured 15-09-2026:
 
-- attributes only → the tests are **silently not discovered** on Drupal 10;
-- doc-comments only → they run everywhere and emit deprecation notices on 11.
+| | Drupal 10.6 | Drupal 11.4 |
+|---|---|---|
+| PHPUnit pinned | `^9.6.34` | `^11.5.50` |
+| PHPUnit attributes (`#[Group]`) | **class does not exist** | the native form; core uses it 472× and has zero doc-comment `@group` |
+| Doc-comment metadata (`@group`) | works | works, emits a deprecation notice |
 
-A deprecation notice is noise. A test that quietly does not run is a lie about
-coverage, so both forms stay until the core floor moves past Drupal 10 (which
-reaches end of life in December 2026 — revisit then, and drop the doc-comments).
-`@covers` annotations were removed for the same reason in reverse: they carry no
-execution meaning and were 13 of the 14 deprecation notices.
+So the three options are not symmetric:
+
+- **attributes only** → phpstan reports *"Attribute class
+  PHPUnit\Framework\Attributes\Group does not exist"* and the **Drupal 10 CI
+  job goes red**. Measured, not predicted — this is what the first version of
+  these tests did.
+- **both forms** → same red, for the same reason. Adding a doc-comment does not
+  make the attribute class exist.
+- **doc-comments only** → green on both, with cosmetic deprecation notices on 11.
+
+**Doc-comments only, therefore.** A red build on a supported core version beats a
+cosmetic notice on another. `@covers` annotations were dropped too: they carry no
+execution meaning and were most of the notice count. Revisit when the core floor
+moves past Drupal 10 — end of life December 2026 — and switch to attributes then.
 
 ## Verified locally, 15-09-2026
 
-Against a real `drupal/recommended-project:^11` install — core **11.4.6**,
-PHP 8.5.10, PHPUnit 11.5.56:
+Both supported core branches, against real installs, PHP 8.5.10:
 
-| Check | Result |
-|---|---|
-| `phpcs --standard=Drupal,DrupalPractice` | clean, zero violations |
-| `phpstan` (level 1, phpstan-drupal) | `[OK] No errors` |
-| `phpunit` unit + kernel | **21 tests, 49 assertions, OK**, zero deprecations |
+| Core | phpcs (Drupal, DrupalPractice) | phpstan | phpunit |
+|---|---|---|---|
+| **11.4.6** (PHPUnit 11.5.56) | clean | `[OK] No errors` | **OK, 21 tests, 49 assertions** |
+| **10.6.16** (PHPUnit 9.6) | clean | `[OK] No errors` | **OK, 21 tests, 49 assertions** ¹ |
+
+¹ ⚠️ **The Drupal 10 leg exits non-zero on this machine, and it is not this
+module.** Drupal 10 on PHP 8.5 trips `PDO::sqliteCreateFunction() is deprecated
+since 8.5` inside **core's own SQLite driver**, 120 times, and core's
+`phpunit.xml` sets `failOnWarning="true"`. Drupal 10.6 declares `php >=8.1.0`
+and predates PHP 8.5.
+
+**Proven by control**, the same way the Docusaurus webpack pin was: a Drupal 10
+**core** kernel test (`ModuleHandlerTest`) emits the identical deprecations on
+this PHP. The module's own result is the `OK (21 tests, 49 assertions)` line.
+Run the Drupal 10 leg on PHP 8.3 for a green exit code. drupal.org's CI pins a
+supported PHP per core version, so this does not arise there.
+
+🔑 **Prove a failure is yours with a control before you go looking in your own
+code.** Twice in one day, on two unrelated ecosystems, a red run was the
+fixture's and not the artefact's.
 
 🔑 **The kernel test is the one that matters.** The unit tests assert the render
 *array*; `TagRenderTest` renders it through Drupal and asserts the *HTML*. That
