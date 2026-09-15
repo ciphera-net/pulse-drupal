@@ -1,0 +1,23 @@
+{
+  "name": "drupal/pulse_analytics",
+  "description": "Privacy-first web analytics. No cookies, no personal data, and the script it adds to your pages is under 3 KB.",
+  "type": "drupal-module",
+  "homepage": "https://www.drupal.org/project/pulse_analytics",
+  "authors": [
+    {
+      "name": "Ciphera",
+      "homepage": "https://ciphera.net"
+    }
+  ],
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/pulse_analytics",
+    "source": "https://git.drupalcode.org/project/pulse_analytics",
+    "docs": "https://docs.ciphera.net/pulse"
+  },
+  "license": "GPL-2.0-or-later",
+  "extra": {
+    "branch-alias": {
+      "dev-1.x": "1.x-dev"
+    }
+  }
+}

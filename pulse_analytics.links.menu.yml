@@ -1,0 +1,5 @@
+pulse_analytics.settings:
+  title: 'Pulse Analytics'
+  description: 'Configure the Pulse Analytics tracking tag.'
+  parent: system.admin_config_services
+  route_name: pulse_analytics.settings

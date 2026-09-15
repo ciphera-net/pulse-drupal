@@ -1,0 +1,9 @@
+name: 'Pulse Analytics'
+type: module
+description: 'Privacy-first web analytics. No cookies, no personal data, and the script it adds to your pages is under 3 KB.'
+package: Statistics
+# ^10 || ^11 covers both currently-supported core branches (10.6.x and 11.x).
+# This module uses only hook_page_attachments() and ConfigFormBase, both stable
+# across the range, so there is no reason to require a later 10.x point release.
+core_version_requirement: ^10 || ^11
+configure: pulse_analytics.settings

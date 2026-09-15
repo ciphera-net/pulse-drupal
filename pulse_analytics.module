@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Adds the Pulse Analytics tracking tag to every page.
+ */
+
+use Drupal\pulse_analytics\TagBuilder;
+
+/**
+ * Implements hook_page_attachments().
+ *
+ * A procedural hook on purpose. Drupal 11.1 introduced the attribute-based
+ * #[Hook] class-method form and prefers it, but Drupal 10 does not support it
+ * at all — and this module declares ^10 || ^11. Procedural hooks still work
+ * throughout 11.x, so one implementation covers the whole supported range.
+ * Revisit when the core floor moves to 11.
+ *
+ * Why not a *.libraries.yml entry: a library is a static declaration, and
+ * data-domain varies per site. The tag has to be built from config at request
+ * time, which is what html_head is for.
+ */
+function pulse_analytics_page_attachments(array &$attachments) {
+  $config = \Drupal::config('pulse_analytics.settings');
+
+  // The tag varies with this config, so every page that carries it must be
+  // invalidated when the config changes. Without this, editing the domain
+  // leaves every already-rendered page serving the old one — and because the
+  // page still works, nothing looks broken.
+  $attachments['#cache']['tags'][] = 'config:pulse_analytics.settings';
+
+  // Administration pages are not the site's audience, and counting them
+  // inflates every number the site owner looks at. Off by default. This varies
+  // the output by route, which the render cache already keys on.
+  if (!$config->get('track_admin') && \Drupal::service('router.admin_context')->isAdminRoute()) {
+    return;
+  }
+
+  foreach (TagBuilder::buildHeadTags(
+    (string) $config->get('domain'),
+    (bool) $config->get('companion'),
+    (string) $config->get('api')
+  ) as $tag) {
+    $attachments['#attached']['html_head'][] = $tag;
+  }
+}

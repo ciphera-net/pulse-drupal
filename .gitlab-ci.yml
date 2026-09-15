@@ -1,0 +1,27 @@
+################
+# Drupal.org GitLab CI.
+#
+# This is the canonical CI for this module: drupal.org runs it on every merge
+# request and on pushes to the default branch, and it is what the contributed
+# ecosystem reads. It runs phpcs (Drupal + DrupalPractice), phpstan, eslint,
+# stylelint, a composer/YAML lint pass, and PHPUnit — unit, kernel and
+# functional — against each supported core version.
+#
+# 🔑 The core version matrix is the reason this file matters more than a local
+# run. Drupal 10.6 pins PHPUnit ^9.6, which cannot read attribute test metadata,
+# while Drupal 11.4 pins ^11.5, which deprecates doc-comment metadata. The tests
+# in this module carry BOTH `@group` and `#[Group]` for exactly that reason: a
+# deprecation notice is noise, a silently-undiscovered test is a lie.
+#
+# The include is kept verbatim from the template so that upstream changes reach
+# this project automatically. See
+# https://git.drupalcode.org/project/gitlab_templates/
+################
+
+include:
+  - project: $_GITLAB_TEMPLATES_REPO
+    ref: $_GITLAB_TEMPLATES_REF
+    file:
+      - '/includes/include.drupalci.main.yml'
+      - '/includes/include.drupalci.variables.yml'
+      - '/includes/include.drupalci.workflows.yml'

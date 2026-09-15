@@ -1,0 +1,7 @@
+pulse_analytics.settings:
+  path: '/admin/config/services/pulse-analytics'
+  defaults:
+    _form: '\Drupal\pulse_analytics\Form\SettingsForm'
+    _title: 'Pulse Analytics'
+  requirements:
+    _permission: 'administer site configuration'
