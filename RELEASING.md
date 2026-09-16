@@ -22,11 +22,59 @@ Measured 15-09-2026. The old folklore of "sandbox first, then apply for
 promotion to a full project" is **obsolete**; there is no project application
 and no reviewer queue.
 
-1. Sign in to drupal.org and make sure the **DrupalCode access** tab on your
-   profile is complete. Since a February-2024 policy change the Git terms are
-   accepted on **`git.drupalcode.org`** (GitLab), not on drupal.org.
+1. Sign in to drupal.org and accept the **Git Terms of Service**. Since a
+   February-2024 policy change these are accepted on **`git.drupalcode.org`**
+   (GitLab), not on drupal.org — the announcement's own words: *"When you next
+   use git.drupalcode.org, you will be asked to accept terms of service"*, and
+   contributors *"will need to accept these terms before pushing code to
+   git.drupalcode.org or continuing while logged in"*.
+
+   🔴 **THE ORDER MATTERS AND GETTING IT WRONG 403s TWICE. Hit 16-09-2026.**
+   Going straight to `git.drupalcode.org` does NOT work: it bounces to drupal.org
+   and returns **`403 - Access denied`**, and so does `drupal.org/project/add`.
+   **Both 403s are the same one.** `git.drupalcode.org/users/sign_in` is a
+   580-byte stub that auto-POSTs to `/users/auth/jwt`, which hands straight off
+   to drupal.org — GitLab is a passthrough and is not the thing refusing you.
+
+   ✅ **The documented order, verbatim from `drupal.org/docs/develop/git/
+   setting-up-git-for-drupal/obtaining-git-access`:**
+
+   1. *"Navigate to your user profile and click the **DrupalCode access** tab"* —
+      this is on **drupal.org**, and it is where *"your drupal.org username is
+      assigned as your git.drupalcode.org username by default"*. **Do this
+      first.** Until an identity is assigned, the JWT hand-off has nothing to map
+      and refuses. ⚠️ Navigate by the **tab on your profile** — the direct path
+      could not be verified from outside, because drupal.org redirects every
+      unknown `/user/N/edit/*` to the login page instead of 404ing, so probing
+      cannot tell a real tab from a typo.
+   2. Then, logged in, visit `git.drupalcode.org`: *"You should be redirected to
+      a personalized form that includes the Terms of Service… click 'Accept
+      terms' at the bottom"*, and *"You should be redirected to your personal
+      Projects page"*. That is the success signal — **a 403 here means step 1 is
+      not done.**
+   3. Only then does `drupal.org/project/add` load.
+
+   🔑 **The discriminator, measured:** an ANONYMOUS request to
+   `drupal.org/project/add` **redirects to `/user/login?destination=project/add`**
+   — it does not 403. So a 403 proves you are logged in and lack the permission,
+   never that you are signed out.
+
+   ⚠️ **If step 1's tab is missing or step 2 still 403s**, the docs' only
+   escalation is: *"post an explanation… to a new issue in the Drupal.org site
+   moderators project"*. Note the doc's wording — *"if you think Git access was
+   wrongly **removed** from your account"* — so the permission is revocable, and
+   a suspension flag presents the same way.
+
+   ⚠️ The canonical how-to (`drupal.org/node/1011196`, updated 8 August 2026)
+   mentions **none** of this; its step 1 is only *"Set up Git on your local
+   computer"*, which is where the whole gate hides.
 2. `drupal.org/project/add` → **Module** → set **Project type: Full project** →
-   Save. The project page exists immediately.
+   Save. The project page exists immediately. ✅ **Re-confirmed 16-09-2026**
+   against the current doc, which says verbatim: *"Some project types will have a
+   Project type field with sandbox, and full options. **If available you should
+   choose the Full project option.**"* Sandbox is now explicitly **deprecated**.
+   ⚠️ Stale third-party blog posts still describe a "one-time approval process"
+   to promote sandbox → full; that is the obsolete folklore, not the current flow.
 3. Machine name: **`pulse_analytics`** — verified free on 15-09-2026.
    ⚠️ **The short name is permanent and cannot be changed.** `pulse` alone is
    already taken by an unrelated "Pulse Site Template".
@@ -140,6 +188,33 @@ ships as `defer="defer"` because Docusaurus pipes its pages through an HTML
 minifier that re-serialises boolean attributes. Two platforms, same input,
 different bytes — which is the whole argument for asserting against rendered
 output rather than against what the code emits.
+
+## ⏳ A dated constraint that resolves itself — measured 16-09-2026
+
+A fresh `./scripts/check.sh --fresh` on Drupal 11.4.6 is green (`ALL CHECKS
+PASSED`, 21 tests / 49 assertions, phpcs clean, phpstan `[OK] No errors`) but
+reports **one real deprecation** alongside the ten expected doc-comment ones:
+
+> *"Kernel test classes must specify the `#[RunTestsInSeparateProcesses]`
+> attribute, not doing so is deprecated in drupal:11.3.0 and **will throw an
+> exception in drupal:12.0.0**."*
+
+🔑 **This is not cosmetic and it cannot be fixed today**, because the fix is a
+PHPUnit **attribute** — the exact construct that reds the Drupal 10 job, since
+PHPUnit 9.6 has no attribute classes and phpstan reports them as non-existent.
+So the module is pinned between two core versions pulling opposite ways:
+
+| | wants | because |
+|---|---|---|
+| Drupal 10.6 (PHPUnit 9.6) | **no** attributes | the classes do not exist; phpstan goes red |
+| Drupal 12 | **requires** `#[RunTestsInSeparateProcesses]` | doc-comment era is over; this throws |
+
+**Nothing to do now** — Drupal 12 is not out, and 11.4 only warns. It resolves on
+the trigger this file already names: **Drupal 10 end of life, December 2026.**
+At that point drop the `@group` doc-comments, add `#[Group]`, and add
+`#[RunTestsInSeparateProcesses]` to `TagRenderTest` — one change, not two.
+⚠️ Do not add the attribute early to silence the notice; it trades a warning on a
+core version that is not released for a **red build on one that is supported**.
 
 ## Local checks
 

@@ -9,9 +9,20 @@
 #
 # 🔑 The core version matrix is the reason this file matters more than a local
 # run. Drupal 10.6 pins PHPUnit ^9.6, which cannot read attribute test metadata,
-# while Drupal 11.4 pins ^11.5, which deprecates doc-comment metadata. The tests
-# in this module carry BOTH `@group` and `#[Group]` for exactly that reason: a
-# deprecation notice is noise, a silently-undiscovered test is a lie.
+# while Drupal 11.4 pins ^11.5, which deprecates doc-comment metadata.
+#
+# 🔴 The tests therefore carry DOC-COMMENT `@group` ONLY — no `#[Group]`
+# attributes. This comment previously said they carry BOTH; that was wrong, and
+# "both" is the option that was measured to FAIL. On Drupal 10 the attribute
+# class does not exist, so phpstan reports "Attribute class
+# PHPUnit\Framework\Attributes\Group does not exist" and the Drupal 10 job goes
+# red — and adding a doc-comment alongside does not make the class exist. Only
+# doc-comments are green on both branches, at the cost of a cosmetic deprecation
+# notice on 11. `@covers` was dropped for the same reason: no execution meaning,
+# most of the notice count.
+#
+# Revisit when the core floor moves past Drupal 10 (end of life December 2026)
+# and switch to attributes then. Reasoning and the measurements: RELEASING.md.
 #
 # The include is kept verbatim from the template so that upstream changes reach
 # this project automatically. See
