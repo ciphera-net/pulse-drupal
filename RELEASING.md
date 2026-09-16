@@ -1,5 +1,13 @@
 # Releasing pulse_analytics (Drupal)
 
+## 🟢 LIVE since 16-09-2026 — `1.0.0`
+
+- Project: <https://www.drupal.org/project/pulse_analytics> · node id **3623475**
+- Repo: `https://git.drupalcode.org/project/pulse_analytics.git` · GitLab project id **244376**
+- Release: <https://www.drupal.org/project/pulse_analytics/releases/1.0.0>
+- `composer require drupal/pulse_analytics` resolves.
+- Maintainer account: **`ciphera`**.
+
 ## 🔴 This repository is the working copy. drupal.org is canonical.
 
 Unlike every other Pulse integration, the home of a contributed Drupal module is
@@ -124,21 +132,100 @@ id is **244376**; the job trace endpoint needs `read_api`, which the
 
 ## A release is a tag AND a release node
 
-Both, in this order. The tag alone publishes nothing.
+Both, in this order. The tag alone publishes nothing. ✅ **Walked end to end for
+`1.0.0` on 16-09-2026**; every step below is as-built, not as-planned.
 
 1. Bump nothing in code — Drupal modules carry no version string in
-   `*.info.yml`; drupal.org's packaging script writes it.
-2. Tag with **plain semver**: `1.0.0`, `1.1.0`, `2.0.0`. The old
-   `8.x-1.0` core-prefixed form is not used for new projects; core compatibility
-   is declared by `core_version_requirement` in `pulse_analytics.info.yml`
-   instead.
-   ```bash
-   git tag -a 1.0.0 -m "1.0.0"
-   git push origin 1.0.0
+   `*.info.yml`; drupal.org's packaging script writes it. Confirmed on the
+   published tarball, which gained:
+   ```yaml
+   # Information added by Drupal.org packaging script on 2026-09-16
+   version: '1.0.0'
+   project: 'pulse_analytics'
+   datestamp: 1789549452
    ```
-3. On the project page, **Add new release**, choose that tag, write the notes,
-   save. drupal.org builds and publishes the tarball within about five minutes.
-   **This step is what actually releases.**
+2. Push to the **`1.x`** branch, not `main`. The branch name is the release
+   SERIES: drupal.org reads it to decide which series a tag belongs to. Pushing
+   to `main` gives the project code and no releasable series, and that fails at
+   the release form rather than at push time.
+   ```bash
+   git push drupal main:1.x
+   ```
+3. Tag with **plain semver**: `1.0.0`, `1.1.0`, `2.0.0`. The old `8.x-1.0`
+   core-prefixed form is not used for new projects; core compatibility comes from
+   `core_version_requirement` in `pulse_analytics.info.yml` instead.
+   ```bash
+   git tag -a 1.0.0 -m "1.0.0" && git push drupal 1.0.0
+   ```
+4. **Create the release node** at
+   **`https://www.drupal.org/node/add/project-release/3623475`** (3623475 is this
+   project's node id — the "Add new release" link is easy to lose).
+   🔴 **The form itself states the rule that matters:** *"Before clicking Next,
+   the Git tag can be deleted or moved. It can not be modified after clicking
+   Next."* So a tag is **mutable right up to that button and permanent after
+   it** — which is the window to fix a tag that points at the wrong commit.
+   ⚠️ Tick **"This release will not be covered for security advisories"**; the
+   project cannot opt in yet. Release type: **New features** for a first release
+   (nothing to fix, no prior baseline) — an untyped release renders as an empty
+   row in the downloads table.
+
+### 🔑 How to verify a release, and in what order
+
+⚠️ **`drupal.org` serves its "Page not found" page with HTTP 200.** Measured
+against an invented path. A status code proves nothing on this host — compare
+the `<title>`. This bit three times in one session: the GitLab sign-in stub, the
+`/user/N/edit/*` probe, and the release page.
+
+Three signals, and they do **not** arrive together. Measured on `1.0.0`:
+
+| Signal | What it is | Timing |
+|---|---|---|
+| `ftp.drupal.org/files/projects/pulse_analytics-1.0.0.tar.gz` | the artefact a human downloads | **200 first** |
+| `updates.drupal.org/release-history/pulse_analytics/current` | what every Drupal site's `update` module polls | **~90 s LATER** |
+| the release page | a node; anonymous sees "Log in" until it is public | with the feed |
+
+🔴 **The feed is the finish line, not the tarball.** At 09:04 the download
+worked and the feed still said *"No release history was found"* — a minute in
+which the release looks published and is discoverable by nobody. **Check the
+feed.** Same failure class as the Joomla `pulse-update.xml` trap.
+
+```bash
+curl -sS "https://ftp.drupal.org/files/projects/pulse_analytics-<v>.tar.gz" -o /tmp/p.tgz -w '%{http_code} %{size_download}\n'
+curl -sS "https://updates.drupal.org/release-history/pulse_analytics/current" | grep -c "<version><v></version>"
+curl -sS "https://packages.drupal.org/files/packages/8/p2/drupal/pulse_analytics.json" \
+  | python3 -c "import sys,json;print([p['version'] for p in json.load(sys.stdin)['packages']['drupal/pulse_analytics']])"
+```
+
+✅ `1.0.0`: tarball 25,654 bytes, feed carries it, and
+`composer require drupal/pulse_analytics` resolves against
+`packages.drupal.org`. The packaging script also adds the `LICENSE.txt` this
+repo deliberately does not commit — confirmed present in the tarball.
+
+### Pushing: credentials
+
+SSH is not available — **port 22 to `git.drupalcode.org` times out** from the
+workspace. Push over HTTPS with username **`oauth2`** and a personal access
+token as the password.
+
+🔴 **`DRUPALCODE_TOKEN` in the workspace root `.env`, mirrored at
+`kv/shared/drupalcode-token`. It EXPIRES 2026-10-16** — 30 days, GitLab's
+default. When it lapses the push fails as an auth error, which reads like a
+permissions problem.
+
+⚠️ **`GET /api/v4/user` returns all nulls with this token, and that is correct** —
+the scope is `write_repository`, which does not grant `read_user`. Do not read
+that as a dead token. Check it with `/api/v4/personal_access_tokens/self`
+(`active: true`). The same scoping means it **cannot read job traces**, which
+need `read_api`.
+
+Never put the token on a command line:
+
+```bash
+umask 077; CRED=$(mktemp)
+printf 'https://oauth2:%s@git.drupalcode.org\n' "$DRUPALCODE_TOKEN" > "$CRED"
+git -c credential.helper="store --file=$CRED" push drupal main:1.x
+rm -f "$CRED"
+```
 
 ## No LICENSE file, and the licence is not our choice
 
