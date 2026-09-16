@@ -99,6 +99,29 @@ changed". `Pulse Analytics` is Ciphera's own mark, so this is fine — but the
 module must not imply a Drupal endorsement, which is why README.md carries an
 independence disclaimer. Keep it there.
 
+## ✅ What a fully-green drupal.org pipeline looks like (16-09-2026)
+
+Measured on **#963160**, `32aa7da`, and worth recording because the first two
+pipelines looked green and were not:
+
+| | first push (#963131) | after the fix (#963160) |
+|---|---|---|
+| jobs | 7 | **10** |
+| jobs that can fail the build | 3 | **10** |
+| core versions tested | 1 (Drupal 11) | **2** — `phpunit (previous major)` runs |
+| cspell | **failed**, pipeline still `success` | success |
+
+Check a pipeline like this, not by its badge:
+
+```bash
+curl -sS "https://git.drupalcode.org/api/v4/projects/244376/pipelines/<id>/jobs?per_page=100" \
+ | python3 -c "import sys,json;[print(f\"{j['status']:9} allow_failure={str(j['allow_failure']):5} {j['name']}\") for j in sorted(json.load(sys.stdin),key=lambda x:x['name'])]"
+```
+
+⚠️ **`allow_failure=True` on any job means that job is decoration.** The project
+id is **244376**; the job trace endpoint needs `read_api`, which the
+`write_repository` push token deliberately does not have.
+
 ## A release is a tag AND a release node
 
 Both, in this order. The tag alone publishes nothing.
