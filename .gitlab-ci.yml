@@ -47,7 +47,14 @@
 # allow_failure per job before calling a green pipeline a passing one.
 variables:
   # Test the previous major too: we claim ^10 || ^11, so both must run.
+  # 🔴 THIS IS A TWO-PART GATE AND ONE HALF IS NOT ENOUGH. Measured on #963155:
+  # OPT_IN_TEST_PREVIOUS_MAJOR alone made the Drupal 10 jobs EXIST and then left
+  # them `manual`/`skipped` — they appear in the pipeline, they are green-adjacent,
+  # and they never ran. _AUTORUN_PREVIOUS_MAJOR defaults to 'none' while
+  # _AUTORUN_CURRENT defaults to 'all'; 'all' is copied from the value that is
+  # demonstrably running today rather than guessed from the regex.
   OPT_IN_TEST_PREVIOUS_MAJOR: '1'
+  _AUTORUN_PREVIOUS_MAJOR: 'all'
   # Make the validate stage able to fail. Without this phpcs and phpstan are
   # decoration — the two checks this module's review discipline leans on hardest.
   _ALL_VALIDATE_ALLOW_FAILURE: '0'

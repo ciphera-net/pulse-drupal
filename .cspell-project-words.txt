@@ -34,6 +34,7 @@ unschemad
 Licence
 licence
 analyse
+normalise
 Normalises
 Normalising
 normalised
