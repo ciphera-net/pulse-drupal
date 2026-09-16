@@ -1,0 +1,44 @@
+# Words the drupal.org cspell job does not know. One per line; # comments and
+# blank lines are ignored. Read by the gitlab_templates cspell job, which runs
+# against the en-US dictionary — see
+# https://project.pages.drupalcode.org/gitlab_templates/jobs/cspell/
+#
+# 🔴 Every entry here was a REAL cspell failure on pipeline #963131 (16-09-2026),
+# not a precaution. Reproduce the list before adding to it:
+#   npx cspell@8 -c .cspell.json --no-progress --words-only --unique "**/*"
+
+# Proper nouns
+Buytaert
+Ciphera
+Ciphera's
+ciphera
+Joomla
+drupalcode
+drush
+
+# Tool names that appear in docs and scripts
+phpcs
+phpstan
+phpunit
+PHPUNIT
+SIMPLETEST
+
+# Drupal jargon. "unschemad config" is core's own term and appears in
+# config/schema/pulse_analytics.schema.yml.
+unschemad
+
+# 🔑 British spellings. The house voice is British English and the code uses it
+# too (TagBuilder::normalise*), while cspell's dictionary here is en-US. These
+# are deliberate, not typos — do not "correct" them to en-US, because the code
+# identifiers would have to change with them.
+Licence
+licence
+analyse
+Normalises
+Normalising
+normalised
+serialises
+
+# Ordinary English words missing from the en-US dictionary at minWordLength 4
+Hostnames
+hostnames

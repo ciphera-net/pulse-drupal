@@ -8,8 +8,9 @@
 # functional — against each supported core version.
 #
 # 🔑 The core version matrix is the reason this file matters more than a local
-# run. Drupal 10.6 pins PHPUnit ^9.6, which cannot read attribute test metadata,
-# while Drupal 11.4 pins ^11.5, which deprecates doc-comment metadata.
+# run — but ONLY because the variables block below turns it on. Drupal 10.6 pins
+# PHPUnit ^9.6, which cannot read attribute test metadata, while Drupal 11.4 pins
+# ^11.5, which deprecates doc-comment metadata.
 #
 # 🔴 The tests therefore carry DOC-COMMENT `@group` ONLY — no `#[Group]`
 # attributes. This comment previously said they carry BOTH; that was wrong, and
@@ -28,6 +29,29 @@
 # this project automatically. See
 # https://git.drupalcode.org/project/gitlab_templates/
 ################
+
+# 🔴 MEASURED 16-09-2026 ON PIPELINE #963131, AND IT CONTRADICTED THIS FILE.
+# The include ALONE does not give you what the comment above promises. Two
+# defaults in the shared template have to be overridden or the CI is theatre:
+#
+#   1. Every OPT_IN_TEST_* defaults to '0', so ONLY the current core version
+#      runs. There was no matrix — one phpunit job, Drupal 11 only — while
+#      pulse_analytics.info.yml claims `^10 || ^11`. We were shipping a Drupal 10
+#      claim that CI never exercised, and the LOCAL harness was the only thing
+#      testing it. Exactly backwards from what RELEASING.md said.
+#   2. phpcs, phpstan, eslint and cspell all ran with allow_failure=true, so
+#      FOUR of seven jobs could not fail the pipeline. cspell was RED on the
+#      first push and the pipeline still reported `success`.
+#
+# 🔑 A pipeline's own status is not a statement about its jobs. Read
+# allow_failure per job before calling a green pipeline a passing one.
+variables:
+  # Test the previous major too: we claim ^10 || ^11, so both must run.
+  OPT_IN_TEST_PREVIOUS_MAJOR: '1'
+  # Make the validate stage able to fail. Without this phpcs and phpstan are
+  # decoration — the two checks this module's review discipline leans on hardest.
+  _ALL_VALIDATE_ALLOW_FAILURE: '0'
+  _CSPELL_ALLOW_FAILURE: '0'
 
 include:
   - project: $_GITLAB_TEMPLATES_REPO

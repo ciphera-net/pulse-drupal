@@ -11,9 +11,22 @@ convenience.
 Consequences worth stating before anything else:
 
 - **There is no Woodpecker pipeline here, on purpose.** `.gitlab-ci.yml` runs
-  the full supported-core matrix against real databases on drupal.org. A second
+  the supported-core matrix against real databases on drupal.org. A second
   Woodpecker copy could not do that, so it would be a green check guarding very
   little. `./scripts/check.sh` is the local equivalent.
+
+  🔴 **Corrected 16-09-2026 — this was NOT true of the include alone, and the
+  first real pipeline proved it.** Measured on `#963131`: **one** phpunit job,
+  Drupal 11 only, no matrix — because every `OPT_IN_TEST_*` in the shared
+  template defaults to `'0'`. Meanwhile `pulse_analytics.info.yml` claims
+  `^10 || ^11`. So the local harness was the only thing testing Drupal 10, the
+  exact reverse of the sentence above. Worse, **phpcs, phpstan, eslint and
+  cspell all ran `allow_failure: true`** — four of seven jobs could not fail the
+  build, and **cspell was RED while the pipeline reported `success`**.
+  `.gitlab-ci.yml` now sets `OPT_IN_TEST_PREVIOUS_MAJOR`,
+  `_ALL_VALIDATE_ALLOW_FAILURE` and `_CSPELL_ALLOW_FAILURE` to fix both.
+  🔑 **A pipeline's own status is not a statement about its jobs** — read
+  `allow_failure` per job before calling a green pipeline a passing one.
 - **A release is two steps, and a tag alone does nothing.** See below.
 
 ## Creating the project — first time only
@@ -119,10 +132,29 @@ directory: neither `google_analytics` nor `matomo` carries one.
 
 ## What the CI runs
 
-`.gitlab-ci.yml` includes drupal.org's shared template verbatim — which is what
-`matomo` does, and the reason to keep it verbatim is that upstream changes then
-reach this project automatically. It runs phpcs (Drupal + DrupalPractice),
-phpstan, lint passes, and PHPUnit across the supported core matrix.
+`.gitlab-ci.yml` includes drupal.org's shared template — which is what `matomo`
+does, and the reason to keep the include itself untouched is that upstream
+changes then reach this project automatically. It runs phpcs (Drupal +
+DrupalPractice), phpstan, eslint, cspell, a composer lint pass, and PHPUnit.
+
+⚠️ **The include is kept verbatim; the VARIABLES are not.** Three overrides sit
+above it and each one was earned by a measurement, not a preference — see the
+comment block in that file. Without them the matrix does not run and most of the
+validate stage cannot fail.
+
+### cspell needs a project dictionary
+
+`.cspell-project-words.txt` is that dictionary — 22 words, every one a real
+failure on the first pipeline. Most are proper nouns and tool names; the
+interesting group is the **British spellings** (`licence`, `analyse`,
+`normalised`, `serialises`), which the job's en-US dictionary rejects. They are
+deliberate: the house voice is British English and the code uses it too
+(`TagBuilder::normalise*`), so "correcting" them would mean renaming identifiers.
+Regenerate the list rather than guessing at it:
+
+```bash
+npx cspell@8 -c .cspell.json --no-progress --words-only --unique "**/*"
+```
 
 🔑 **The core matrix is why that file matters more than any local run**, and it
 decides how the tests are annotated. Measured 15-09-2026:
