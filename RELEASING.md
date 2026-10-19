@@ -227,6 +227,38 @@ git -c credential.helper="store --file=$CRED" push drupal main:1.x
 rm -f "$CRED"
 ```
 
+## Project logo
+
+`logo.png` in the repository root is the logo drupal.org shows for this
+project: the Pulse mark on the dark ground `#0a0a0a`, 512 x 512 px, 9,026
+bytes, copied byte for byte from the brand library's Drupal pack.
+
+The rule is in the Project Browser maintainer guide on drupal.org, section Logo:
+
+<https://www.drupal.org/docs/extending-drupal/contributed-modules/contributed-module-documentation/project-browser/module-maintainers-how-to-update-projects-to-be-compatible-with-project-browser#s-logo>
+
+It asks for a PNG named `logo.png`, 512 x 512 px, not animated, suggested size
+10 KB or less, with no rounded corners and no module name drawn in it, in the
+root of the repository on the default branch. Here that is `1.x`. The file
+already meets those requirements, so do not re-render, resize or recompress it.
+
+There is no separate upload. GitLab serves `logo.png` from the default branch as
+the project avatar (`https://git.drupalcode.org/project/pulse_analytics/-/avatar`)
+and the drupal.org project page reads that URL, so the logo reaches drupal.org
+like any other change: merge to `main`, then `git push drupal main:1.x`
+(credentials above). No tag, release node or new release is involved. The guide
+says logos are cached and can take up to an hour to show, and lists the Project
+Browser card among the places it appears. To check that it landed, the
+`avatar_url` field of `https://git.drupalcode.org/api/v4/projects/244376` is set
+and that URL returns the same bytes as `logo.png`.
+
+drupal.org builds release archives with `git archive`, so an `export-ignore`
+line in `.gitattributes` could keep the logo out of them. This repository has no
+`.gitattributes`. The guide offers that mechanism for tests and CI settings,
+which the 1.0.0 archive already ships, and nothing requires it for a logo. The
+1.0.0 archive predates the logo, so the next release will be the first to
+contain it.
+
 ## No LICENSE file, and the licence is not our choice
 
 **GPL-2.0-or-later**, required by drupal.org of everything it hosts. Apache-2.0
