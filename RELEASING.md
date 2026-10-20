@@ -127,8 +127,8 @@ curl -sS "https://git.drupalcode.org/api/v4/projects/244376/pipelines/<id>/jobs?
 ```
 
 ⚠️ **`allow_failure=True` on any job means that job is decoration.** The project
-id is **244376**; the job trace endpoint needs `read_api`, which the
-`write_repository` push token deliberately does not have.
+id is **244376**; the job trace endpoint needs the fine-grained permission
+**Job: Read**, which the push token deliberately does not have.
 
 ## A release is a tag AND a release node
 
@@ -149,8 +149,11 @@ Both, in this order. The tag alone publishes nothing. ✅ **Walked end to end fo
    to `main` gives the project code and no releasable series, and that fails at
    the release form rather than at push time.
    ```bash
-   git push drupal main:1.x
+   git fetch origin && git push drupal origin/main:refs/heads/1.x
    ```
+   Push `origin/main`, not a local `main`. A local `main` that is behind
+   `origin/main` but level with drupal.org's `1.x` pushes nothing, and git
+   reports `Everything up-to-date`.
 3. Tag with **plain semver**: `1.0.0`, `1.1.0`, `2.0.0`. The old `8.x-1.0`
    core-prefixed form is not used for new projects; core compatibility comes from
    `core_version_requirement` in `pulse_analytics.info.yml` instead.
@@ -207,23 +210,64 @@ SSH is not available — **port 22 to `git.drupalcode.org` times out** from the
 workspace. Push over HTTPS with username **`oauth2`** and a personal access
 token as the password.
 
-🔴 **`DRUPALCODE_TOKEN` in the workspace root `.env`, mirrored at
-`kv/shared/drupalcode-token`. It EXPIRES 2026-10-16** — 30 days, GitLab's
-default. When it lapses the push fails as an auth error, which reads like a
-permissions problem.
+🔴 **Use a fine-grained personal access token with the project permission
+Code: Push.** On 19-10-2026 a fine-grained token without that permission was
+refused with the message below, and a token with it pushed:
 
-⚠️ **`GET /api/v4/user` returns all nulls with this token, and that is correct** —
-the scope is `write_repository`, which does not grant `read_user`. Do not read
-that as a dead token. Check it with `/api/v4/personal_access_tokens/self`
-(`active: true`). The same scoping means it **cannot read job traces**, which
-need `read_api`.
+```text
+This operation requires a fine-grained personal access token with the following project permissions: [Code: Push]
+```
 
-Never put the token on a command line:
+The 16-09-2026 pushes used a legacy `write_repository` token. Whether
+drupal.org still lets you create a legacy token was not checked.
+
+The push needs that one permission and nothing else. On git.drupalcode.org:
+avatar → **Edit profile** → **Access → Personal access tokens** → **Generate
+token** → **Fine-grained token**, then:
+
+| Field | Value |
+|---|---|
+| Group and project access | the option that starts "Only specific groups or projects" (it ends "…that I'm a member of" in GitLab 19.2 to 19.4 and "…I have access to" from 19.5), then **Add group or project** → `project/pulse_analytics` |
+| Resource permissions, Group and project tab | resource **Code**, permission **Push** |
+| User and Global tabs | nothing |
+
+drupal.org's GitLab documents that row for the version it runs, in the "Git
+operations" table at
+<https://git.drupalcode.org/help/auth/tokens/fine_grained_access_tokens_other.md>.
+Reading needs no permission, because the project is public.
+
+⏱ **Set the expiry date yourself.** GitLab's form fills in a date 30 days ahead
+(`OFFSET_DAYS = 30` in its source). The first token, created 16-09-2026,
+expired that way on 16-10-2026. The documented maximum is 365 days.
+
+The token is `DRUPALCODE_TOKEN` in the workspace root `.env`, mirrored at
+`kv/shared/drupalcode-token`.
+
+| What git or the API answers | What it means |
+|---|---|
+| `HTTP Basic: Access denied` | the token is expired, revoked or wrong |
+| `…project permissions: [Code: Push]` | the token is fine-grained but lacks Code: Push |
+| 403 `[Personal Access Token: Read]` on `/api/v4/personal_access_tokens/self`, 403 `[User: Read]` on `/api/v4/user` | the token holds only Code: Push, as intended, so this is not a dead token |
+
+Never put the token on a command line, and **reset the credential helper list**
+with an empty `credential.helper=` before adding the store file. Without the
+reset, a global helper such as the macOS keychain also saves the token. On later
+pushes git asks that helper first and uses whatever token it saved, even an
+expired one.
+
+`--dry-run` tests a new token without changing anything. GitLab runs the push
+permission check on the first request of a push
+(`GET info/refs?service=git-receive-pack`), and a dry run sends nothing after
+that request.
 
 ```bash
 umask 077; CRED=$(mktemp)
 printf 'https://oauth2:%s@git.drupalcode.org\n' "$DRUPALCODE_TOKEN" > "$CRED"
-git -c credential.helper="store --file=$CRED" push drupal main:1.x
+git fetch origin
+GIT_TERMINAL_PROMPT=0 git -c credential.helper= -c credential.helper="store --file=$CRED" \
+  push --dry-run drupal origin/main:refs/heads/1.x
+GIT_TERMINAL_PROMPT=0 git -c credential.helper= -c credential.helper="store --file=$CRED" \
+  push drupal origin/main:refs/heads/1.x
 rm -f "$CRED"
 ```
 
@@ -245,12 +289,18 @@ already meets those requirements, so do not re-render, resize or recompress it.
 There is no separate upload. GitLab serves `logo.png` from the default branch as
 the project avatar (`https://git.drupalcode.org/project/pulse_analytics/-/avatar`)
 and the drupal.org project page reads that URL, so the logo reaches drupal.org
-like any other change: merge to `main`, then `git push drupal main:1.x`
+like any other change: merge to `main`, then push `origin/main` to `1.x`
 (credentials above). No tag, release node or new release is involved. The guide
 says logos are cached and can take up to an hour to show, and lists the Project
 Browser card among the places it appears. To check that it landed, the
 `avatar_url` field of `https://git.drupalcode.org/api/v4/projects/244376` is set
-and that URL returns the same bytes as `logo.png`.
+and that URL returns the same bytes as `logo.png`. The project page then shows
+`<img class="repository-logo" src="https://git.drupalcode.org/project/pulse_analytics/-/avatar">`,
+the markup every project with a logo uses.
+
+✅ Measured on the first logo push, 19-10-2026: pushed at 22:00:31 UTC, the
+avatar was set and byte-identical to `logo.png` within 8 seconds, and the project
+page showed it at 22:19:33 UTC, 19 minutes after the push.
 
 drupal.org builds release archives with `git archive`, so an `export-ignore`
 line in `.gitattributes` could keep the logo out of them. This repository has no
