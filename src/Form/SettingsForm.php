@@ -32,7 +32,7 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('pulse_analytics.settings');
 
     $form['intro'] = [
-      '#markup' => $this->t('Add <a href="@pulse" target="_blank" rel="noopener">Pulse Analytics</a> to this site. No cookies, no personal data, and the script it adds to your pages is under 3&nbsp;KB. You need a Pulse account with a site registered for the same domain.', [
+      '#markup' => $this->t('Add <a href="@pulse" target="_blank" rel="noopener">Pulse Analytics</a> to this site. No cookies, no IP addresses stored, and the script it adds to your pages is under 3&nbsp;KB. You need a Pulse account with a site registered for the same domain.', [
         '@pulse' => 'https://pulse.ciphera.net',
       ]),
     ];
