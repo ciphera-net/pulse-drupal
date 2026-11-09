@@ -58,11 +58,15 @@ steps:
       - composer validate --strict
       # drupal/coder ^8.3 is the line Drupal 11's dev bundle pins. It is installed
       # outside the workspace, so phpcs reads only the module's own files.
+      # phpcs lints STDIN instead of its path arguments whenever STDIN holds data,
+      # and Woodpecker hands the step's script to the shell on STDIN, so without
+      # `< /dev/null` it lints the rest of this script (measured 09-11-2026:
+      # "FILE: STDIN ... Expected 1 newline at end of file; 2 found").
       - |
         mkdir /tmp/phpcs
         echo '{"require":{"drupal/coder":"^8.3"},"config":{"allow-plugins":{"dealerdirect/phpcodesniffer-composer-installer":true}}}' > /tmp/phpcs/composer.json
         composer install --working-dir=/tmp/phpcs --no-interaction --no-progress
-        /tmp/phpcs/vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=php,module,inc,install,test,info,yml .
+        /tmp/phpcs/vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=php,module,inc,install,test,info,yml . < /dev/null
       # drupal/coder brings symfony/yaml, so the YAML check needs no extra install.
       - |
         php -r 'require "/tmp/phpcs/vendor/autoload.php"; if (count($argv) < 2) { fwrite(STDERR, "REFUSING: no YAML files found\n"); exit(1); } $bad = 0; foreach (array_slice($argv, 1) as $f) { try { Symfony\Component\Yaml\Yaml::parseFile($f); echo "yaml ok: $f\n"; } catch (Throwable $e) { fwrite(STDERR, "yaml error in $f: " . $e->getMessage() . "\n"); $bad = 1; } } exit($bad);' $(find . -path ./.git -prune -o -type f -name '*.yml' -print)
