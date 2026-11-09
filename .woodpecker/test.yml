@@ -1,0 +1,72 @@
+# Runs on pull_request AND on push to main.
+#
+# A workflow that only runs on pull requests checks the proposal and never the
+# branch that ships, so this one runs on both.
+#
+# This is a lighter gate on purpose. drupal.org's own CI (.gitlab-ci.yml) runs
+# the full matrix of supported core versions against real databases, and
+# scripts/check.sh builds a Drupal site to run the same checks locally.
+#
+# What this covers: the syntax of every PHP file, `composer validate --strict`,
+# the Drupal and DrupalPractice coding standards (drupal/coder, which installs
+# and runs without Drupal core, with the same flags scripts/check.sh uses), and
+# that every YAML file parses.
+#
+# What this does NOT cover: the PHPUnit Unit and Kernel tests and phpstan (all
+# three need Drupal core), the Drupal 10 and 11 matrix, and PHP syntax newer
+# than 8.3. Those stay with drupal.org's CI and scripts/check.sh.
+when:
+  - event: pull_request
+  - event: push
+    branch: main
+
+labels:
+  runner: k8s
+
+steps:
+  - name: lint
+    image: registry.ops.ciphera.net/mirror/docker.io/library/php:8.3-cli-alpine-74c3e6f3f78d@sha256:74c3e6f3f78d8bdd090b1d565ef0040c4cd8c7b3757996638cba05dcb87fc94a
+    backend_options:
+      kubernetes:
+        resources:
+          requests: { memory: 64Mi, cpu: 50m }
+          limits: { memory: 256Mi }
+    commands:
+      - php --version
+      # .module is PHP too. The file count is asserted: a find that matches
+      # nothing would lint nothing and pass.
+      - |
+        find . -path ./.git -prune -o -type f \( -name '*.php' -o -name '*.module' -o -name '*.inc' -o -name '*.install' -o -name '*.theme' \) -print | sort > /tmp/php-files.txt
+        COUNT=$(wc -l < /tmp/php-files.txt)
+        echo "linting $COUNT PHP file(s)"
+        [ "$COUNT" -ge 5 ] || { echo "REFUSING: expected at least 5 PHP files, found $COUNT."; exit 1; }
+        FAILED=0
+        while read -r f; do
+          php -l "$f" > /tmp/lint.out 2>&1 || { cat /tmp/lint.out; FAILED=1; }
+        done < /tmp/php-files.txt
+        [ "$FAILED" -eq 0 ] || exit 1
+
+  - name: standards
+    image: registry.ops.ciphera.net/mirror/docker.io/library/composer:2.11.1@sha256:07cb23c4c9d528524a8b9a67c403d6ad7fef2268651eb1448e3874d40f28b789
+    backend_options:
+      kubernetes:
+        resources:
+          requests: { memory: 256Mi, cpu: 100m }
+          limits: { memory: 1Gi }
+    commands:
+      - composer --version
+      - composer validate --strict
+      # drupal/coder ^8.3 is the line Drupal 11's dev bundle pins. It is installed
+      # outside the workspace, so phpcs reads only the module's own files.
+      # phpcs lints STDIN instead of its path arguments whenever STDIN holds data,
+      # and Woodpecker hands the step's script to the shell on STDIN, so without
+      # `< /dev/null` it lints the rest of this script (measured 09-11-2026:
+      # "FILE: STDIN ... Expected 1 newline at end of file; 2 found").
+      - |
+        mkdir /tmp/phpcs
+        echo '{"require":{"drupal/coder":"^8.3"},"config":{"allow-plugins":{"dealerdirect/phpcodesniffer-composer-installer":true}}}' > /tmp/phpcs/composer.json
+        composer install --working-dir=/tmp/phpcs --no-interaction --no-progress
+        /tmp/phpcs/vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=php,module,inc,install,test,info,yml . < /dev/null
+      # drupal/coder brings symfony/yaml, so the YAML check needs no extra install.
+      - |
+        php -r 'require "/tmp/phpcs/vendor/autoload.php"; if (count($argv) < 2) { fwrite(STDERR, "REFUSING: no YAML files found\n"); exit(1); } $bad = 0; foreach (array_slice($argv, 1) as $f) { try { Symfony\Component\Yaml\Yaml::parseFile($f); echo "yaml ok: $f\n"; } catch (Throwable $e) { fwrite(STDERR, "yaml error in $f: " . $e->getMessage() . "\n"); $bad = 1; } } exit($bad);' $(find . -path ./.git -prune -o -type f -name '*.yml' -print)
