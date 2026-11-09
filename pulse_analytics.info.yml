@@ -1,6 +1,6 @@
 name: 'Pulse Analytics'
 type: module
-description: 'Privacy-first web analytics. No cookies, no IP addresses stored, and the script it adds to your pages is under 3 KB.'
+description: 'Pulse Analytics adds privacy-first web analytics to a Drupal site. It sets no cookies and never stores IP addresses, and the script it adds to your pages is under 3 KB.'
 package: Statistics
 # ^10 || ^11 covers both currently-supported core branches (10.6.x and 11.x).
 # This module uses only hook_page_attachments() and ConfigFormBase, both stable
