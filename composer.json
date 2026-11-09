@@ -1,6 +1,6 @@
 {
   "name": "drupal/pulse_analytics",
-  "description": "Privacy-first web analytics. No cookies, no IP addresses stored, and the script it adds to your pages is under 3 KB.",
+  "description": "Pulse Analytics adds privacy-first web analytics to a Drupal site. It sets no cookies and never stores IP addresses, and the script it adds to your pages is under 3 KB.",
   "type": "drupal-module",
   "homepage": "https://www.drupal.org/project/pulse_analytics",
   "authors": [
