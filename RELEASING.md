@@ -18,10 +18,11 @@ convenience.
 
 Consequences worth stating before anything else:
 
-- **There is no Woodpecker pipeline here, on purpose.** `.gitlab-ci.yml` runs
-  the supported-core matrix against real databases on drupal.org. A second
-  Woodpecker copy could not do that, so it would be a green check guarding very
-  little. `./scripts/check.sh` is the local equivalent.
+- **Two CIs, for different jobs (since 09-11-2026).** Woodpecker runs the
+  security scan and the fast checks (`php -l`, `composer validate`, phpcs) on
+  every pull request and push to `main` on GitHub. drupal.org's `.gitlab-ci.yml`
+  runs the core tests against real databases on drupal.org, which Woodpecker
+  does not try to copy. `./scripts/check.sh` is the local equivalent of both.
 
   🔴 **Corrected 16-09-2026 — this was NOT true of the include alone, and the
   first real pipeline proved it.** Measured on `#963131`: **one** phpunit job,

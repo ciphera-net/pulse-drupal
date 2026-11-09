@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Run the same three checks drupal.org's GitLab CI runs, locally.
 #
-# There is deliberately NO Woodpecker pipeline in this repository. The canonical
-# CI for a contributed Drupal module is drupal.org's GitLab CI (.gitlab-ci.yml),
-# which runs the whole matrix of supported core versions against real databases.
-# A second, weaker Woodpecker copy that could not do that would be a green check
-# guarding very little, which is worse than no check at all.
+# Woodpecker (since 09-11-2026) runs only the security scan and the fast checks
+# (php -l, composer validate, phpcs). The canonical CI for a contributed Drupal
+# module is drupal.org's GitLab CI (.gitlab-ci.yml), which runs the supported
+# core versions against real databases.
 #
 # This script is the developer's local equivalent. It builds a throwaway Drupal
 # site, symlinks this module into it and runs phpcs, phpstan and phpunit.
