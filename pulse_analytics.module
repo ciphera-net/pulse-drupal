@@ -5,6 +5,8 @@
  * Adds the Pulse Analytics tracking tag to every page.
  */
 
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
 use Drupal\pulse_analytics\TagBuilder;
 
 /**
@@ -42,5 +44,28 @@ function pulse_analytics_page_attachments(array &$attachments) {
     (string) $config->get('api')
   ) as $tag) {
     $attachments['#attached']['html_head'][] = $tag;
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function pulse_analytics_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.pulse_analytics':
+      $output = '<h2>' . t('About') . '</h2>';
+      $output .= '<p>' . t('This module adds <a href=":pulse">Pulse Analytics</a> to every page of your site. Pulse sets no cookies and never stores IP addresses, and the script it adds is under 3 KB.', [
+        ':pulse' => 'https://pulse.ciphera.net',
+      ]) . '</p>';
+      $output .= '<h2>' . t('Uses') . '</h2>';
+      $output .= '<dl>';
+      $output .= '<dt>' . t('Counting visits') . '</dt>';
+      $output .= '<dd>' . t('Register your site in Pulse under the domain it runs on. The tracker reads that domain from the browser, so the module needs no settings to start counting.') . '</dd>';
+      $output .= '<dt>' . t('Changing the tag') . '</dt>';
+      $output .= '<dd>' . t('On the <a href=":settings">Pulse Analytics settings page</a> you can name a different domain, record clicks, copies and form submits, count administration pages, or send events through your own proxy. The page needs the Administer Pulse Analytics permission.', [
+        ':settings' => Url::fromRoute('pulse_analytics.settings')->toString(),
+      ]) . '</dd>';
+      $output .= '</dl>';
+      return $output;
   }
 }

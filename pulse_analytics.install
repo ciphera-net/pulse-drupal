@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * Update functions for Pulse Analytics.
+ */
+
+use Drupal\user\Entity\Role;
+
+/**
+ * Grant "Administer Pulse Analytics" to roles that could use the settings page.
+ *
+ * Until this update the settings page needed "administer site configuration".
+ * It has its own restricted permission now, so every role that held the old
+ * one keeps access. Administrator roles have every permission already.
+ */
+function pulse_analytics_update_10101() {
+  $granted = [];
+  foreach (Role::loadMultiple() as $role) {
+    if ($role->isAdmin() || !$role->hasPermission('administer site configuration') || $role->hasPermission('administer pulse analytics')) {
+      continue;
+    }
+    $role->grantPermission('administer pulse analytics')->save();
+    $granted[] = $role->label();
+  }
+  if ($granted) {
+    return t('Granted the Administer Pulse Analytics permission to: @roles.', ['@roles' => implode(', ', $granted)]);
+  }
+  return t('No role needed the Administer Pulse Analytics permission.');
+}

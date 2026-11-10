@@ -4,4 +4,4 @@ pulse_analytics.settings:
     _form: '\Drupal\pulse_analytics\Form\SettingsForm'
     _title: 'Pulse Analytics'
   requirements:
-    _permission: 'administer site configuration'
+    _permission: 'administer pulse analytics'

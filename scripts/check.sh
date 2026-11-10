@@ -61,7 +61,9 @@ parameters:
   paths:
     - $TARGET
 NEON
-./vendor/bin/phpstan analyse -c phpstan-pulse.neon --no-progress || STATUS=1
+# --memory-limit: PHPStan 1.12 on Drupal 10 crashed at PHP's default 128M once the
+# module referenced core's Role entity (10-11-2026); with 1G it reports no errors.
+./vendor/bin/phpstan analyse -c phpstan-pulse.neon --no-progress --memory-limit=1G || STATUS=1
 
 echo
 echo "==> phpunit (unit + kernel)"

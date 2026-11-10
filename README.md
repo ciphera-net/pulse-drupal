@@ -37,6 +37,9 @@ when the site answers on several.
 | Also track administration pages | off | Administration pages are not the site's audience, and counting them inflates every number on the dashboard. |
 | Custom API origin | empty | Route events through your own proxy origin. Enter the origin only, without a path. |
 
+The settings page needs the **Administer Pulse Analytics** permission. Updating from 1.0.x grants it to every role that
+had **Administer site configuration**, which the page used before, so nobody loses access.
+
 ## Three things worth knowing
 
 **What lands in your pages is the literal tag**, without a wrapper or a bootstrap:
