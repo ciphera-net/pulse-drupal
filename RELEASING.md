@@ -275,8 +275,9 @@ rm -f "$CRED"
 ## Project logo
 
 `logo.png` in the repository root is the logo drupal.org shows for this
-project: the Pulse mark on the dark ground `#0a0a0a`, 512 x 512 px, 9,026
-bytes, copied byte for byte from the brand library's Drupal pack.
+project: the Pulse mark in white layers on the brand orange `#FD5E0F` (the same
+mark as Ciphera's profile pictures), 512 x 512 px, 5,111 bytes, copied byte for
+byte from the brand library's Drupal pack (revision v12).
 
 The rule is in the Project Browser maintainer guide on drupal.org, section Logo:
 
