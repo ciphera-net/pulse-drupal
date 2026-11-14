@@ -11,8 +11,7 @@ namespace Drupal\pulse_analytics;
  * and so it can be read side by side with the same decisions in the Astro,
  * Framer and Docusaurus integrations.
  *
- * The URLs, the domain grammar and the rule that the companion script is a
- * SECOND request are copied from those integrations rather than re-derived. Two
+ * The URL and the domain grammar are copied from those integrations rather than re-derived. Two
  * Pulse install surfaces disagreeing about what the tag looks like is a drift
  * bug waiting to happen.
  */
@@ -22,11 +21,6 @@ class TagBuilder {
    * The Pulse tracker.
    */
   const SCRIPT_URL = 'https://js.ciphera.net/script.js';
-
-  /**
-   * The companion script: clicks, copies and form submits.
-   */
-  const COMPANION_URL = 'https://js.ciphera.net/script.interactions.js';
 
   /**
    * A registrable hostname.
@@ -81,8 +75,6 @@ class TagBuilder {
    *   tracker auto-detect the browser's hostname. An invalid non-empty domain
    *   is dropped rather than injected, and the tag falls back to auto-detection
    *   — the same working install, one attribute short.
-   * @param bool $companion
-   *   Whether to also load the companion script.
    * @param string $api
    *   A custom API origin, or '' for the default.
    *
@@ -90,7 +82,7 @@ class TagBuilder {
    *   A list of [render array, key] pairs, ready to append to
    *   $attachments['#attached']['html_head'].
    */
-  public static function buildHeadTags($domain, $companion = FALSE, $api = '') {
+  public static function buildHeadTags($domain, $api = '') {
     $attributes = ['defer' => TRUE];
 
     $domain = self::normalizeDomain((string) $domain);
@@ -119,24 +111,6 @@ class TagBuilder {
         'pulse_analytics_tracker',
       ],
     ];
-
-    if ($companion) {
-      // No data-domain on the companion: the tracker resolves the domain once,
-      // from the core script, and a second copy is a second thing to keep in
-      // step.
-      $tags[] = [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'script',
-          '#attributes' => [
-            'defer' => TRUE,
-            'src' => self::COMPANION_URL,
-          ],
-          '#value' => '',
-        ],
-        'pulse_analytics_companion',
-      ];
-    }
 
     return $tags;
   }

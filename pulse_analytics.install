@@ -28,3 +28,16 @@ function pulse_analytics_update_10101() {
   }
   return t('No role needed the Administer Pulse Analytics permission.');
 }
+
+/**
+ * Remove the retired "companion" setting.
+ *
+ * Whether clicks, copies and form submits are recorded is decided in the
+ * site's settings in Pulse now, so the module no longer stores a value for it.
+ * The key has to go because the config schema no longer declares it.
+ */
+function pulse_analytics_update_10102() {
+  \Drupal::configFactory()->getEditable('pulse_analytics.settings')
+    ->clear('companion')
+    ->save(TRUE);
+}

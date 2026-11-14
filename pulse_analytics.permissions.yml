@@ -1,4 +1,4 @@
 administer pulse analytics:
   title: 'Administer Pulse Analytics'
-  description: 'Change the domain, the companion script and the API origin of the tracking tag that every page loads.'
+  description: 'Change the domain and the API origin of the tracking tag that every page loads.'
   restrict access: true

@@ -1,8 +1,8 @@
 # Pulse Analytics for Drupal
 
 This module adds privacy-first analytics to a Drupal site. Pulse Analytics
-sets no cookies and never stores IP addresses, and the script the module adds
-to your pages is under 3 KB.
+sets no cookies and never stores IP addresses. The script the module adds to
+your pages is about 3 KB.
 
 [Pulse Analytics](https://pulse.ciphera.net) is built by
 [Ciphera](https://ciphera.net), a company in Belgium, and hosted in Switzerland.
@@ -33,14 +33,16 @@ when the site answers on several.
 | Setting | Default | What it does |
 |---|---|---|
 | Domain | empty | The domain this site is registered under in Pulse. Empty means auto-detect. |
-| Record clicks, copies and form submits | off | Loads the companion script as a second, separate request (see below). |
 | Also track administration pages | off | Administration pages are not the site's audience, and counting them inflates every number on the dashboard. |
 | Custom API origin | empty | Route events through your own proxy origin. Enter the origin only, without a path. |
+
+Scroll depth, outbound links, file downloads, and clicks, copies and form submits are each switched on or off in
+your site's settings in Pulse (Settings → General). The tag stays the same, so there is nothing to change here.
 
 The settings page needs the **Administer Pulse Analytics** permission. Updating from 1.0.x grants it to every role that
 had **Administer site configuration**, which the page used before, so nobody loses access.
 
-## Three things worth knowing
+## Two things worth knowing
 
 **What lands in your pages is the literal tag**, without a wrapper or a bootstrap:
 
@@ -52,10 +54,6 @@ The module adds no inline JavaScript, so **a strict Content-Security-Policy
 needs neither a nonce nor `unsafe-inline` for this module**. The policy needs
 only `script-src https://js.ciphera.net` and `connect-src https://pulse-api.ciphera.net`.
 A kernel test pins this, so it cannot quietly stop being true.
-
-**The interaction capture is a second request on purpose.** The core script's
-size is a published claim, and nothing is folded into it to make a feature look
-free.
 
 **A mistyped domain is rejected at the settings form.** An analytics install
 that reports nothing while looking fine is the worst outcome this module can
@@ -76,7 +74,7 @@ one. Because the page still works, nothing would look broken.
 
 Pulse Analytics measures pageviews, referrers, countries, devices, time on page and scroll depth, plus goals, funnels and campaigns.
 It sets no cookies and never stores IP addresses.
-Visitors whose browser sends Do Not Track or Global Privacy Control are not counted, so if you test in Brave or Firefox and see nothing, the tracker is behaving correctly.
+Whether visitors who send Do Not Track or Global Privacy Control are counted is a setting in Pulse, so if you test in Brave or Firefox and see nothing, check that setting first.
 Safari is the easiest browser to verify an install in.
 
 ## Licence
