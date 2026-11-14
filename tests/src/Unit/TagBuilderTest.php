@@ -137,7 +137,12 @@ class TagBuilderTest extends UnitTestCase {
     $this->assertCount(1, $tags);
     $this->assertSame('pulse_analytics_tracker', $tags[0][1]);
     $this->assertSame(
-      ['defer' => TRUE, 'data-domain' => 'example.com', 'data-api' => 'https://proxy.example.com', 'src' => TagBuilder::SCRIPT_URL],
+      [
+        'defer' => TRUE,
+        'data-domain' => 'example.com',
+        'data-api' => 'https://proxy.example.com',
+        'src' => TagBuilder::SCRIPT_URL,
+      ],
       $tags[0][0]['#attributes']
     );
   }

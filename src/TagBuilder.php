@@ -11,9 +11,9 @@ namespace Drupal\pulse_analytics;
  * and so it can be read side by side with the same decisions in the Astro,
  * Framer and Docusaurus integrations.
  *
- * The URL and the domain grammar are copied from those integrations rather than re-derived. Two
- * Pulse install surfaces disagreeing about what the tag looks like is a drift
- * bug waiting to happen.
+ * The URL and the domain grammar are copied from those integrations rather
+ * than re-derived. Two Pulse install surfaces disagreeing about what the tag
+ * looks like is a drift bug waiting to happen.
  */
 class TagBuilder {
 
