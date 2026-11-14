@@ -114,7 +114,7 @@ class TagBuilderTest extends UnitTestCase {
    * A custom API origin rides on the tag, without trailing slashes.
    */
   public function testCarriesCustomApiOriginWithTrailingSlashesStripped() {
-    $tags = TagBuilder::buildHeadTags('example.com', FALSE, 'https://proxy.example.com//');
+    $tags = TagBuilder::buildHeadTags('example.com', 'https://proxy.example.com//');
     $this->assertSame('https://proxy.example.com', $tags[0][0]['#attributes']['data-api']);
   }
 
@@ -127,28 +127,24 @@ class TagBuilderTest extends UnitTestCase {
   }
 
   /**
-   * The companion is a separate tag and carries no domain.
-   */
-  public function testTheCompanionIsSeparateTagAndCarriesNoDomain() {
-    $tags = TagBuilder::buildHeadTags('example.com', TRUE);
-    $this->assertCount(2, $tags);
-    [$element, $key] = $tags[1];
-    $this->assertSame('pulse_analytics_companion', $key);
-    $this->assertSame(
-      ['defer' => TRUE, 'src' => TagBuilder::COMPANION_URL],
-      $element['#attributes']
-    );
-  }
-
-  /**
-   * Every html_head key must be unique.
+   * The builder returns exactly one tag, whatever the options.
    *
-   * Drupal uses the key to deduplicate, so two tags sharing one means that one
-   * of them silently never renders.
+   * Drupal uses the html_head key to deduplicate, and the interactions script
+   * is loaded by the core script itself, so no second tag may appear.
    */
-  public function testTheTwoTagsHaveDistinctKeys() {
-    $tags = TagBuilder::buildHeadTags('example.com', TRUE);
-    $this->assertNotSame($tags[0][1], $tags[1][1]);
+  public function testReturnsExactlyOneTag() {
+    $tags = TagBuilder::buildHeadTags('example.com', 'https://proxy.example.com');
+    $this->assertCount(1, $tags);
+    $this->assertSame('pulse_analytics_tracker', $tags[0][1]);
+    $this->assertSame(
+      [
+        'defer' => TRUE,
+        'data-domain' => 'example.com',
+        'data-api' => 'https://proxy.example.com',
+        'src' => TagBuilder::SCRIPT_URL,
+      ],
+      $tags[0][0]['#attributes']
+    );
   }
 
   /**
@@ -156,7 +152,6 @@ class TagBuilderTest extends UnitTestCase {
    */
   public function testPointsAtJsCipheraNetAndNowhereElse() {
     $this->assertSame('https://js.ciphera.net/script.js', TagBuilder::SCRIPT_URL);
-    $this->assertSame('https://js.ciphera.net/script.interactions.js', TagBuilder::COMPANION_URL);
   }
 
 }

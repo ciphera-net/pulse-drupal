@@ -32,7 +32,7 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('pulse_analytics.settings');
 
     $form['intro'] = [
-      '#markup' => $this->t('This module adds <a href="@pulse" target="_blank" rel="noopener">Pulse Analytics</a> to your site with a script under 3&nbsp;KB. Pulse sets no cookies and never stores IP addresses. You need a Pulse account with a site registered for the same domain.', [
+      '#markup' => $this->t('This module adds <a href="@pulse" target="_blank" rel="noopener">Pulse Analytics</a> to your site with a script of about 3&nbsp;KB. Pulse sets no cookies and never stores IP addresses. Scroll depth, outbound links, file downloads, and clicks, copies and form submits are each switched on or off in your site\'s settings in Pulse (Settings → General). The tag stays the same, so there is nothing to change here. You need a Pulse account with a site registered for the same domain.', [
         '@pulse' => 'https://pulse.ciphera.net',
       ]),
     ];
@@ -43,13 +43,6 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('domain'),
       '#description' => $this->t("Enter the domain this site is registered under in Pulse, for example <code>example.com</code>. If you leave it empty, the tracker uses the browser's own hostname, which is right for a site served on one domain."),
       '#maxlength' => 253,
-    ];
-
-    $form['companion'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Record clicks, copies and form submits'),
-      '#default_value' => $config->get('companion'),
-      '#description' => $this->t('This adds a second script as a separate request, so your pages only load it when you switch this on.'),
     ];
 
     $form['track_admin'] = [
@@ -106,7 +99,6 @@ class SettingsForm extends ConfigFormBase {
       // raw input would mean the form showed one thing and the page carried
       // another.
       ->set('domain', $domain === '' ? '' : TagBuilder::normalizeDomain($domain))
-      ->set('companion', (bool) $form_state->getValue('companion'))
       ->set('track_admin', (bool) $form_state->getValue('track_admin'))
       ->set('api', rtrim(trim((string) $form_state->getValue('api')), '/'))
       ->save();

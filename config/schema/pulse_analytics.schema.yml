@@ -9,9 +9,6 @@ pulse_analytics.settings:
     domain:
       type: string
       label: 'Domain'
-    companion:
-      type: boolean
-      label: 'Record clicks, copies and form submits'
     api:
       type: uri
       label: 'Custom API origin'

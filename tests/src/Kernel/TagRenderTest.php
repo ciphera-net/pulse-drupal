@@ -90,20 +90,20 @@ class TagRenderTest extends KernelTestBase {
   public function testEmitsDataApi() {
     $this->assertSame(
       '<script defer data-domain="example.com" data-api="https://proxy.example.com" src="https://js.ciphera.net/script.js"></script>',
-      $this->renderTags(TagBuilder::buildHeadTags('example.com', FALSE, 'https://proxy.example.com/'))
+      $this->renderTags(TagBuilder::buildHeadTags('example.com', 'https://proxy.example.com/'))
     );
   }
 
   /**
-   * The companion is a separate tag with no domain of its own.
+   * No flag attribute and no second tag is ever emitted.
    */
-  public function testEmitsTheCompanionAsSeparateTag() {
-    $html = $this->renderTags(TagBuilder::buildHeadTags('example.com', TRUE));
-    $this->assertStringContainsString(
-      '<script defer src="https://js.ciphera.net/script.interactions.js"></script>',
-      $html
-    );
-    $this->assertSame(1, substr_count($html, 'data-domain='));
+  public function testEmitsOneTagAndNoFlagAttributes() {
+    $html = $this->renderTags(TagBuilder::buildHeadTags('example.com', 'https://proxy.example.com'));
+    $this->assertSame(1, substr_count($html, '<script'));
+    $this->assertStringNotContainsString('script.interactions.js', $html);
+    $this->assertStringNotContainsString('data-no-', $html);
+    $this->assertStringNotContainsString('data-ignore-', $html);
+    $this->assertStringContainsString('data-api="https://proxy.example.com"', $html);
   }
 
   /**
@@ -115,7 +115,7 @@ class TagRenderTest extends KernelTestBase {
    * claim in README.md silently stops being true — so it is pinned here.
    */
   public function testEmitsNoInlineScript() {
-    $html = $this->renderTags(TagBuilder::buildHeadTags('example.com', TRUE, 'https://proxy.example.com'));
+    $html = $this->renderTags(TagBuilder::buildHeadTags('example.com', 'https://proxy.example.com'));
     $this->assertStringNotContainsString('</script><script', str_replace('></script>', '>@@</script>', $html));
     foreach (explode("\n", $html) as $line) {
       if (trim($line) === '') {
@@ -144,21 +144,6 @@ class TagRenderTest extends KernelTestBase {
       'example.com',
       $attachments['#attached']['html_head'][0][0]['#attributes']['data-domain']
     );
-  }
-
-  /**
-   * The companion setting reaches the page.
-   */
-  public function testHookHonoursTheCompanionSetting() {
-    $this->config('pulse_analytics.settings')
-      ->set('domain', 'example.com')
-      ->set('companion', TRUE)
-      ->save();
-
-    $attachments = [];
-    pulse_analytics_page_attachments($attachments);
-
-    $this->assertCount(2, $attachments['#attached']['html_head']);
   }
 
   /**
